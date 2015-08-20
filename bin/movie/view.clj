@@ -1,9 +1,10 @@
 (ns movie.view
-   ;(:require [compojure.core :refer :all]
-    ;        [compojure.route :as app-routes]))
-          ;  [ring.middleware.defaults :refer [wrap-defaults site-defaults]])
-  (:use [hiccup core page]))
- 
+
+    (:require [db.db :as db]
+           ; [movie.test :as atest]
+           ; [clojure.string :as str]
+            [hiccup.page :as hicup]))
+
   (defn index-page []
     (html5
       [:head
@@ -13,7 +14,5 @@
        [:ul
         (for [x (range 1 4)]
           [:li x])]]))
-  
-  ;(defroutes app-routes
-   ; (GET "/" [] "<h1>Seli</h1>"))
-  
+
+

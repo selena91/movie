@@ -8,9 +8,10 @@
                  [ring/ring-defaults "0.1.4"]
                  [hiccup "1.0.5"]
                  [org.clojure/java.jdbc "0.2.3"]
-                 [mysql/mysql-connector-java "5.1.6"]]
-  :plugins [[lein-ring "0.8.10"]]
-  :ring {:handler movie.routes/app}
+                 [mysql/mysql-connector-java "5.1.6"]
+                 [selmer "0.8.9"]]
+  :plugins [[lein-ring "0.8.13"]]
+  :ring {:handler movie.handler/app}
   :profiles
   {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
                         [ring-mock "0.1.5"]]}})
