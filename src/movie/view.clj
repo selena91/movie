@@ -1,15 +1,11 @@
 (ns movie.view
 (:require
-            ;[cocktails.db :as db]
+            [movie.db :as db]
             [clojure.string :as str]
             [hiccup.page :as hiccP]
-            ;[net.cgrand.enlive-html :as html]
             [ring.util.anti-forgery]
             [clojure.java.jdbc :as j]
           ))
-
-(use 'ring.util.anti-forgery)
-(use 'selmer.parser)
 
 (defn gen-page-head
   "Generates page headers"
@@ -21,10 +17,12 @@
    (hiccP/include-css "/bootstrap/css/bootstrap.min.css")
    (hiccP/include-js "/bootstrap/js/bootstrap.min.js")
    (hiccP/include-js "/ajax.js")
-   (hiccP/include-js "/ajaxTest.js")])
+   (hiccP/include-js "/star-rating.js")
+   (hiccP/include-css "/css/star-rating.css")
+   ])
 
 (def navbar
-  "Generates a navbar "
+  "Generates a navbar"
   [:nav {:class "navbar navbar-inverse navbar-fixed-top"}
    [:div {:class "container"}
    [:div {:class "navbar-header"}
@@ -36,12 +34,10 @@
      [:a {:class "navbar-brand" :href "#"} [:img {:src "/icon.png" :style "height: 32px; float: left; margin-right: 5px"}] " "]]
     [:div {:id "navbar" :class "collapse navbar-collapse"}
     [:ul {:class "nav navbar-nav"}
-     [:li [:a {:class "btn btn-primary" :href "/"} "Home"]]
-     [:li [:a {:class "btn btn-primary" :href "/all-cocktails"} "Top 10 movies "]]
-     [:li [:a {:class "btn btn-primary" :href "/similar-recipes"} "Rate "]]
-     [:li [:a {:class "btn btn-primary" :href "/search-recipes"} "Search "]]
-     [:li [:a {:class "btn btn-primary" :href "/login"} "Log in "]]
-     [:li [:a {:class "btn btn-primary" :href "/register"} "Register "]]]]]])
+     [:li [:a {:class "btn btn-primary" :href "/home"} "Home"]]
+     [:li [:a {:class "btn btn-primary" :href "/recommendation"} "Recommended movies "]]
+     [:li [:a {:class "btn btn-primary" :href "/movies"} "All movies "]]
+     [:li [:a {:class "btn btn-primary" :href "/"} "Log out "]]]]]])
 
 
 (defn home-page
@@ -53,30 +49,31 @@
    [:h1 "Home"]
    [:div {:class "jumbotron"}
     [:h2" Wellcome"]
-    [:p " to the online movie club."]]))
+    [:p " to the online movie club."]])
+  )
 
 
 (defn login-page
   "Function which generates login-page"
   []
   (hiccP/html5
-   (gen-page-head "login")
+   (gen-page-head "Login")
    [:div {:class "col-md-4"}]
    [:div {:class "login  col-md-4"}
+    [:form {:method "POST" :action "/"}
      [:h2 "Login"]
      [:div {:class "form-group has-feedback"}
      [:label {:class "control-label"}]
-     [:input {:type "text" :class "form-control " :placeholder "User Name"}]
+     [:input {:type "text" :name "CustomerID" :class "form-control " :required "required" :placeholder "User Name"}]
      [:i {:class "glyphicon glyphicon-user form-control-feedback"}]]
      [:div {:class "form-group has-feedback"}
-     [:input {:type "password" :class "form-control" :placeholder "Password"}]
-     [:i {:class "glyphicon glyphicon-lock form-control-feedback "}]]
+     [:input {:type "password" :name "Password" :class "form-control" :placeholder "Password"}]
+     [:i {:class "glyphicon glyphicon-movk form-control-feedback "}]]
      [:form {:action "/"}
-     [:button.btn.btn-info.submit {:style "margin-bottom: 10px" :id "btn-login"} "Login" ]]
- ;;  [:button  {:type "button" :class "btn-success btn-md" :method="post" :enctype="/" :id "btn-login"}  "Login"]
+     [:button.btn.btn-info.submit {:style "margin-bottom: 10px" :id "btn-login"} "Login" ]]]
      [:p [:i "Need an account? Register now!"]]
      [:form {:action "/register"}
-     [:button.btn.btn-primary.submit {:id "btn-register"} "Register" ]]
+     [:button.btn.btn-primary.submit "Register" ]]
      [:div {:class "col-md-4"}]]))
 
 (defn register-page
@@ -88,8 +85,47 @@
    [:div {:class "login col-md-4"}
    [:h1 "Create an account"]
    [:div
-   [:form {:action "register-user" :method "post"}
-     [:input {:type "text" :class "form-control" :id "username" :name "username" :placeholder "Username"}]
-     [:input {:type "text" :class "form-control" :id "password" :name "password" :placeholder "Password"}]
+   [:form {:action "/register" :method "POST"}
+     [:input {:type "text" :class "form-control" :id "CustomerID" :name "CustomerID" :placeholder "Username"}]
+     [:input {:type "text" :class "form-control" :id "Password" :name "Password" :placeholder "Password"}]
      [:button.btn.btn-primary.submit {:style "margin-top: 10px"} "Register "]
     ]]]))
+
+(defn all-movies-list
+  "Function which returns the list of all movies which customer can rate"
+  []
+  (let [all-movies (db/movie-list)]
+    (hiccP/html5
+     (gen-page-head "Movies")
+     navbar
+     [:h1 "All movies"]
+     [:div {:class "col-md-4" :style "margin-bottom:20px"}
+     [:label {:class "control-label"}]
+     [:input {:type "text" :name "Search" :class "form-control " :placeholder "Search"}]]
+     [:div {:class "container"}
+     [:table {:class "table"}
+      [:tr [:th "MovieID"] [:th "Year of release"] [:th "Title"] [:th ""]]
+      (for [mov all-movies]
+        [:tr [:td (:movieid mov)] [:td (:yearofrelease mov)] [:td (:title mov)] [:td [:input {:class "rating" :type "number" :min "1" :max "5" :step "1"}] ]])]])))
+
+(defn recommended-movies
+  "Function which returns the list of top 10 recommended movies
+   or top 10 rated movies if user didn't give any rate"
+  [CustomerID]
+  (let [countRatings (db/count-customer-rating CustomerID)]
+    (hiccP/html5
+     (gen-page-head "Recommendation")
+     (if (> (:total countRatings) 0)
+      ([:h1 "Top 10 recommended movies"])
+      (let [movie-list (db/top10-movies)]
+         [:h1 "Top 10 movies"]
+         [:div {:class "col-md-4" :style "margin-bottom:20px"}
+         [:label {:class "control-label"}]]
+         [:div {:class "container"}
+         [:table {:class "table"}
+          [:tr [:th "MovieID"] [:th "Year of release"] [:th "Title"] [:th ""]]
+          (for [mov movie-list]
+            [:tr [:td (:movieid mov)] [:td (:yearofrelease mov)] [:td (:title mov)] [:td [:input {:class "rating" :type "number" :min "1" :max "5" :step "1"}] ]])]])
+      ))
+   )
+)

@@ -1,18 +1,18 @@
-(ns db.db)
+(ns db.db
+(:require [clojure.java.jdbc :as sql]
+          [hiccup.page :as hiccP]
+          [korma.core :as kormaC]
+          [korma.db :as kormadb1]))
 
-(require '[clojure.java.jdbc :as jdbc])
+(def db
+  {:classname   "org.sqlite.JDBC"
+   :subprotocol "sqlite"
+   :subname     "movie.db"})
 
-(def db-spec {
-              :subprotocol "mysql"
-              :subname "//localhost:3306/movie"
-              :user "root"
-              :password "" })
+(defn movie-list
+ []
+  (sql/query db ["select * from movies"]))
 
-(jdbc/with-connection db-spec
-  (jdbc/with-query-results rs ["select * from movies"]
-    (dorun (map #(println (:Title :MovieID  %)) rs))))
-       
-;(clojure.pprint/pprint rs)
- 
- 
+
+
 

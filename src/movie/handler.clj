@@ -2,29 +2,51 @@
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [compojure.handler :as handler]
-            ;[cocktails.db :as db]
             [movie.view :as view]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-            [ring.middleware.anti-forgery]
+            [movie.db :as db]
             [ring.middleware.session]
-            ))
+            [ring.util.response])
+  )
 
 (defroutes app-routes
   (GET "/"
        []
+       (view/login-page))
+
+  (GET "/home"
+       []
        (view/home-page))
 
-  (GET "/login"
-       []
-       (view/login-page))
+  (POST "/"
+       [CustomerID Password]
+       (:session CustomerID)
+       (println (str "Session: " (:session CustomerID)))
+       (let [countCustomer (db/do-login CustomerID Password)]
+       (if (> (:total countCustomer) 0)
+         (view/home-page)
+         (view/register-page)))
+       )
 
   (GET "/register"
        []
        (view/register-page))
 
-  ;for access to public folder and all his content (js,css,img...)
-  (route/resources "/"))
+  (POST "/register"
+       [CustomerID Password]
+       (db/register CustomerID Password)
+       (view/login-page))
+
+  (GET "/movies"
+       []
+       (view/all-movies-list))
+
+  (GET "/recommendation"
+       [CustomerID]
+       (view/recommended-movies CustomerID))
+
+  (route/resources "/")
+  (route/not-found "Not Found"))
 
   (def app
-  (wrap-defaults app-routes nil))
+  (handler/site app-routes))
 

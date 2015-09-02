@@ -7,8 +7,11 @@
                  [ring/ring-core "1.2.1"]
                  [ring/ring-defaults "0.1.4"]
                  [hiccup "1.0.5"]
-                 [org.clojure/java.jdbc "0.2.3"]
+                 [org.clojure/java.jdbc "0.3.6"]
                  [mysql/mysql-connector-java "5.1.6"]
+                 [org.xerial/sqlite-jdbc "3.7.2"]
+                 [sqlitejdbc "0.5.6"]
+                 [korma "0.4.0"]
                  [selmer "0.8.9"]]
   :plugins [[lein-ring "0.8.13"]]
   :ring {:handler movie.handler/app}
